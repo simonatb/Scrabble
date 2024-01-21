@@ -7,7 +7,6 @@ using namespace std;
 int const MAX = 20;
 int const DEFAULT = 10;
 
-//Get size 
 int GetLength(string word) {
     int i = 0;
     while (word[i]) {
@@ -16,33 +15,26 @@ int GetLength(string word) {
     return i;
 }
 
-//Validations
-bool ValidAnswerExit(int answer) {
-    return(answer == 0 || answer == 1 || answer == 2);
+bool ValidAnswerExit(string answer) {
+    return(answer == "game" || answer == "settings" || answer == "exit");
 }
 bool ValidateChanges(int change) {
     return (change >= 3 && change <= MAX);
 }
-bool ValidAnswer(int answer) {
-    return(answer == 0 || answer == 1);
+bool ValidAnswer(string answer) {
+    return(answer == "no" || answer == "yes");
 }
 
-
-//Checks if the word is composed of the given letters
 bool isStringInArray(const char* letters, string word, int letterCount) {
     int size = GetLength(word);
 
     int alphabet[26] = { 0 };
-    for (int i = 0;i < letterCount;i++) {
+    for (int i = 0;i <= letterCount;i++) {
         alphabet[letters[i] - 'a']++;
-
     }
-
     for (int i = 0;i < size;i++) {
         alphabet[word[i] - 'a']--;
-
     }
-
     for (int j = 0;j < 26;j++) {
         if (alphabet[j] < 0) {
             return false;
@@ -56,23 +48,21 @@ bool isStringInFile(const char* filename, string word) {
         cerr << "Error opening file: " << filename << endl;
         return false;
     }
-
     string line;
-    while (getline(file, line)) {
-        if (line.find(word) != string::npos) {
-            file.close(); // Close the file after finding the string
-            return true;  // Return true if the string is found
+    while (file >> line) {
+        if (line == word) {
+            return true;
+            break;
         }
     }
-
-    file.close(); // Close the file if the string is not found
+    file.close();
     return false;
 }
-//Gameplay word validation
+
 bool GameplayValidation(char* lettersPtr, string word, char* filenamePtr, int letterCount) {
     return (isStringInArray(lettersPtr, word, letterCount) == 1 && isStringInFile(filenamePtr, word) == 1);
 }
-//Random letters generator
+
 char getRandomLetter() {
 
     int randomValue = rand() % 26;
@@ -81,6 +71,7 @@ char getRandomLetter() {
 }
 
 void CurrentRandomLetters(char letters[], int letterCount) {
+    cout << "letters: ";
     for (int i = 1; i <= letterCount; i++) {
         char randomValue = getRandomLetter();
         letters[i] = randomValue;
@@ -89,22 +80,24 @@ void CurrentRandomLetters(char letters[], int letterCount) {
     cout << endl;
 }
 
-
 void Menu();
 
 void ScrabbleGame(int rounds, int letterCount, char* filenamePtr) {
+    cout << "If you want a new set of letters type in N \n";
     int points = 0;
     string word;
     char array[MAX];
     char* letters = array;
     
     for (int i = 1; i <= rounds; i++) {
-        cout << "Round " << i << "   points: " << points << "   letters:";
+        cout << "Round " << i << "   points: " << points <<endl;
         CurrentRandomLetters(letters, letterCount);
-
         do {
             cin >> word;
-            if (GameplayValidation(letters, word, filenamePtr, letterCount) == 0) {
+            if (word == "N") {
+                CurrentRandomLetters(letters, letterCount);
+            }
+            else if (GameplayValidation(letters, word, filenamePtr, letterCount) == 0) {
                 cout << "Invalid. Try again!\n";
             }
         } while (GameplayValidation(letters, word, filenamePtr, letterCount) == 0);
@@ -118,31 +111,35 @@ void ScrabbleGame(int rounds, int letterCount, char* filenamePtr) {
     Menu();
 }
 void Rounds(int& rounds) {
-    int answer = 0;
-    cout << "Do you want to change the number of rounds? (1 for yes/0 for no)\n";
+    string answer;
+    cout << "Do you want to change the number of rounds? (yes/no)\n";
     do {
         cin >> answer;
         if (ValidAnswer(answer) == 0) {
             cout << "Invalid answer \n";
-
         }
     } while (ValidAnswer(answer) == 0);
-    if (answer == 1) {
-        cout << "How many rounds you want to play? \n";
 
+    if (answer == "yes") {
+        cout << "How many rounds you want to play? \n";
         do {
             cin >> rounds;
-            if (ValidateChanges(rounds) == 0) {
-                cout << "Invalid answer \n";
-
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+                cout << "Invalid answer. Please enter a valid number.\n";
+            }
+            else if (ValidateChanges(rounds) == 0) {
+                cout << "Invalid answer. Please enter a number between 3 and " << MAX << ".\n";
             }
         } while (ValidateChanges(rounds) == 0);
+       
     }
 }
 
 void Letters(int& letterCount) {
-    int answer = 0;
-    cout << "Do you want to change the number of letters you are given? (1 for yes/0 for no)\n";
+    string answer;
+    cout << "Do you want to change the number of letters you are given? (yes/no)\n";
     do {
         cin >> answer;
         if (ValidAnswer(answer) == 0) {
@@ -151,14 +148,17 @@ void Letters(int& letterCount) {
         }
     } while (ValidAnswer(answer) == 0);
 
-    if (answer == 1) {
+    if (answer == "yes") {
         cout << "How many letters you want to be given? \n";
-
         do {
             cin >> letterCount;
-            if (ValidateChanges(letterCount) == 0) {
-                cout << "Invalid answer \n";
-
+            if (cin.fail()) {
+                cin.clear(); 
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+                cout << "Invalid answer. Please enter a valid number.\n";
+            }
+            else if (ValidateChanges(letterCount) == 0) {
+                cout << "Invalid answer. Please enter a number between 3 and " << MAX << ".\n";
             }
         } while (ValidateChanges(letterCount) == 0);
     }
@@ -173,8 +173,8 @@ bool isLowerCase(const string& str) {
     return true;
 }
 void AddWord(const char* filename) {
-    int answer = 0;
-    cout << "Do you want to add a word to the dictionary? (1 for yes/0 for no)\n";
+    string answer;
+    cout << "Do you want to add a word to the dictionary? (yes/no)\n";
     do {
         cin >> answer;
         if (ValidAnswer(answer) == 0) {
@@ -182,7 +182,7 @@ void AddWord(const char* filename) {
 
         }
     } while (ValidAnswer(answer) == 0);
-    if (answer == 1) {
+    if (answer == "yes") {
         cout << "Type in the word (only lowercase):\n";
         string NewWord;
         do {
@@ -195,7 +195,6 @@ void AddWord(const char* filename) {
         ofstream MyFile(filename, ios::app);
         MyFile << NewWord << endl;
         MyFile.close();
-
     }
 }
 void Settings(char filename[]) {
@@ -209,15 +208,15 @@ void Settings(char filename[]) {
     Letters(letterCount);
     AddWord(filename);
 
-    cout << "Let's play scrabble now!";
+    cout << "Let's play scrabble now!"<<endl<<"If you want to change the given letters type in N !"<<endl;
     ScrabbleGame(rounds, letterCount, filenamePtr);
 }
 
 void Menu() {
 
     char filename[] = "scrabble.txt";
-    int answer = 0;
-    cout << "Do you want to start a new game or open settings? (0 for settings/1 for new game/2 for exiting the program) \n";
+    string answer;
+    cout << "Do you want to start a new game or open settings? (game/settings/exit) \n";
     do {
         cin >> answer;
         if (ValidAnswerExit(answer) == 0) {
@@ -225,19 +224,19 @@ void Menu() {
 
         }
     } while (ValidAnswerExit(answer) == 0);
-    if (answer == 1) {
+    if (answer == "game") {
         int rounds = DEFAULT;
         int letterCount = DEFAULT;
         ScrabbleGame(rounds, letterCount, filename);
     }
-    else if (answer == 2) {
+    else if (answer == "exit") {
 
         exit(0);
     }
     else Settings(filename);
 }
 int main() {
-  
+    srand(time(0));
     Menu();
    
 }
